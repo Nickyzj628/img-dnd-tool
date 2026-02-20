@@ -171,7 +171,7 @@ export default function DropZone() {
       />
       
       <div class="drop-content">
-        <img src="../src-tauri/icons/128x128.png" alt="" class="drop-icon-img" />
+        <img src="/drop-icon.png" alt="" class="drop-icon-img" />
         <p class="drop-title">拖入图片到此处</p>
         <p class="drop-subtitle">或点击选择文件</p>
         <button 

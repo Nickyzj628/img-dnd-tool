@@ -1417,7 +1417,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "img-dnd-tool"
+name = "image-drag-and-drop-tool"
 version = "0.1.0"
 dependencies = [
  "serde",
