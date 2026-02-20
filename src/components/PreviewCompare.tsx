@@ -1,13 +1,19 @@
 import { createSignal, Show } from 'solid-js';
 import { useImageStore } from '@/stores/imageStore';
 
-export default function PreviewCompare() {
+interface PreviewCompareProps {
+  enableSlider?: boolean;
+  title?: string;
+}
+
+export default function PreviewCompare(props: PreviewCompareProps) {
   const imageState = useImageStore();
   const [sliderPosition, setSliderPosition] = createSignal(50);
   const [containerRef, setContainerRef] = createSignal<HTMLDivElement | null>(null);
   const [isDragging, setIsDragging] = createSignal(false);
 
   const handleMouseDown = (e: MouseEvent) => {
+    if (!props.enableSlider) return;
     setIsDragging(true);
     updateSliderPosition(e);
     
@@ -45,48 +51,52 @@ export default function PreviewCompare() {
   return (
     <Show when={imageState().originalDataUrl}>
       <div class="preview-container">
+        <Show when={props.title}>
+          <div class="preview-title">{props.title}</div>
+        </Show>
         <div 
           ref={setContainerRef}
           class="compare-container"
+          classList={{ 'has-slider': props.enableSlider }}
           onMouseDown={handleMouseDown}
         >
-          {/* 处理后图片（左侧 - 完整显示） */}
-          <Show when={imageState().processedDataUrl}>
-            <div class="image-wrapper processed-full">
-              <img 
-                src={imageState().processedDataUrl!} 
-                alt="处理后"
-                draggable={false}
-                style={{ 'user-select': 'none' }}
-              />
-              <div class="image-label processed-label-full">处理后</div>
-            </div>
-          </Show>
-
-          {/* 原图（右侧 - 通过 clip 显示，默认显示左边部分） */}
-          <div 
-            class="image-wrapper original"
-            style={{ 
-              'clip-path': `inset(0 0 0 ${sliderPosition()}%)`,
-              'z-index': imageState().processedDataUrl ? 2 : 1
-            }}
-          >
+          {/* 原图（左侧 - 完整显示） */}
+          <div class="image-wrapper original-full">
             <img 
               src={imageState().originalDataUrl!} 
               alt="原图"
               draggable={false}
               style={{ 'user-select': 'none' }}
             />
-            <div class="image-label original-label">原图</div>
+            <div class="image-label original-label-full">原图</div>
           </div>
 
-          {/* 滑动条 */}
+          {/* 处理后图片（右侧 - 通过 clip 显示） */}
           <Show when={imageState().processedDataUrl}>
+            <div 
+              class="image-wrapper processed"
+              style={{ 
+                'clip-path': props.enableSlider ? `inset(0 ${sliderPosition()}% 0 0)` : 'none',
+                'z-index': 2
+              }}
+            >
+              <img 
+                src={imageState().processedDataUrl!} 
+                alt="处理后"
+                draggable={false}
+                style={{ 'user-select': 'none' }}
+              />
+              <div class="image-label processed-label">处理后</div>
+            </div>
+          </Show>
+
+          {/* 滑动条 */}
+          <Show when={props.enableSlider && imageState().processedDataUrl}>
             <div 
               class="slider"
               style={{ left: `${sliderPosition()}%` }}
             >
-              <div class="slider-handle">
+              <div class="slider-handle" aria-hidden="true">
                 <span class="slider-icon">◀▶</span>
               </div>
             </div>
@@ -119,16 +129,27 @@ export default function PreviewCompare() {
           -webkit-user-select: none;
         }
         
+        .preview-title {
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--md-sys-color-on-surface);
+          margin-bottom: 12px;
+        }
+        
         .compare-container {
           position: relative;
           width: 100%;
           height: 300px;
           overflow: hidden;
           border-radius: 12px;
-          cursor: col-resize;
+          cursor: default;
           background: var(--md-sys-color-surface-dim);
           user-select: none;
           -webkit-user-select: none;
+        }
+        
+        .compare-container.has-slider {
+          cursor: col-resize;
         }
         
         .image-wrapper {
@@ -153,11 +174,11 @@ export default function PreviewCompare() {
           -webkit-user-select: none;
         }
         
-        .processed-full {
+        .original-full {
           z-index: 1;
         }
         
-        .original {
+        .processed {
           z-index: 2;
         }
         
@@ -174,12 +195,12 @@ export default function PreviewCompare() {
           pointer-events: none;
         }
         
-        .original-label {
-          right: 16px;
+        .original-label-full {
+          left: 16px;
         }
         
-        .processed-label-full {
-          left: 16px;
+        .processed-label {
+          right: 16px;
         }
         
         .slider {

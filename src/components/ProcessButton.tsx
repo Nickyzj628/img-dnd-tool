@@ -32,39 +32,50 @@ export default function ProcessButton() {
         class="process-button"
         onClick={handleProcess}
         disabled={isDisabled()}
+        aria-label="开始处理"
       >
         <Show when={appState().isProcessing}>
           <span class="spinner">◌</span>
-          处理中...
         </Show>
         <Show when={!appState().isProcessing}>
-          开始处理
+          ▶
         </Show>
       </button>
 
-      <style>{
-        `
+      <style>{`
         .process-section {
-          display: flex;
-          justify-content: center;
-          padding: 24px;
+          position: fixed;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 100;
         }
         
         .process-button {
-          font-size: 18px;
-          padding: 16px 32px;
+          width: 48px;
+          height: 48px;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           background: var(--md-sys-color-primary);
           color: var(--md-sys-color-on-primary);
           border: none;
-          border-radius: 20px;
+          border-radius: 50%;
           cursor: pointer;
-          transition: all 0.2s;
-          min-width: 160px;
+          transition: background 0.2s, color 0.2s;
+          font-size: 16px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
         
         .process-button:hover:not(:disabled) {
           background: var(--md-sys-color-primary-container);
           color: var(--md-sys-color-on-primary-container);
+        }
+        
+        .process-button:focus-visible {
+          outline: 2px solid var(--md-sys-color-primary);
+          outline-offset: 2px;
         }
         
         .process-button:disabled {
@@ -75,15 +86,19 @@ export default function ProcessButton() {
         .spinner {
           display: inline-block;
           animation: spin 1s linear infinite;
-          margin-right: 8px;
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+          .spinner {
+            animation: none;
+          }
         }
         
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
-        `
-      }</style>
+      `}</style>
     </div>
   );
 }

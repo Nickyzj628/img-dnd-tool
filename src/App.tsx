@@ -6,7 +6,6 @@ import StepBar from '@/components/StepBar';
 import DropZone from '@/components/DropZone';
 import PresetSelector from '@/components/PresetSelector';
 import PresetEditor from '@/components/PresetEditor';
-import PreviewCompare from '@/components/PreviewCompare';
 import ProcessButton from '@/components/ProcessButton';
 import ExportDropZone from '@/components/ExportDropZone';
 import ErrorDialog from '@/components/ErrorDialog';
@@ -56,31 +55,17 @@ function App() {
       case 1:
         return (
           <div class="step-content">
-            <div class="step-layout">
-              <div class="left-panel">
-                <PresetSelector
-                  onEdit={handleEditPreset}
-                  onAdd={handleAddPreset}
-                />
-              </div>
-              <div class="right-panel">
-                <PreviewCompare />
-                <ProcessButton />
-              </div>
-            </div>
+            <PresetSelector
+              onEdit={handleEditPreset}
+              onAdd={handleAddPreset}
+            />
+            <ProcessButton />
           </div>
         );
       case 2:
         return (
           <div class="step-content">
-            <div class="step-layout">
-              <div class="left-panel">
-                <PreviewCompare />
-              </div>
-              <div class="right-panel">
-                <ExportDropZone />
-              </div>
-            </div>
+            <ExportDropZone />
           </div>
         );
       default:
@@ -154,7 +139,7 @@ function App() {
           display: flex;
           flex-direction: column;
           height: 100vh;
-          padding: 12px 16px;
+          padding: 8px 12px;
         }
         
         .app-main {
@@ -168,22 +153,27 @@ function App() {
         .content-area {
           flex: 1;
           min-height: 0;
-          overflow-y: auto;
-          padding: 4px 0;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
         }
 
         .step-content {
           display: flex;
           flex-direction: column;
-          gap: 12px;
-          height: 100%;
+          flex: 1;
+          min-height: 0;
+        }
+
+        .step-content > :first-child {
+          flex: 1;
+          min-height: 0;
         }
 
         .step-layout {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 16px;
-          height: 100%;
         }
 
         .left-panel,
@@ -191,7 +181,6 @@ function App() {
           display: flex;
           flex-direction: column;
           gap: 12px;
-          overflow-y: auto;
         }
 
         .right-panel {

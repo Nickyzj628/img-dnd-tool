@@ -1,4 +1,4 @@
-// 预设配置 - 允许 width/height/targetSize 为 null 表示保持原样
+// 预设配置
 export interface Preset {
   id: string;
   name: string;
@@ -6,6 +6,7 @@ export interface Preset {
   width: number | null;      // null 表示保持原宽度
   height: number | null;     // null 表示保持原高度
   targetSize: number | null; // null 表示不限制大小，单位字节
+  aspectRatio: string | null; // 比例：'16:9' | '4:3' | '21:9' | null
 }
 
 // 图片处理状态

@@ -1,13 +1,8 @@
-import { createSignal } from 'solid-js';
 import { 
   argbFromHex, 
   themeFromSourceColor, 
-  applyTheme,
-  hexFromArgb 
+  applyTheme
 } from '@material/material-color-utilities';
-
-const [sourceColor, setSourceColor] = createSignal<string | null>(null);
-const [isDark, setIsDark] = createSignal<boolean>(false);
 
 // 从图片提取主色
 export const extractDominantColor = async (file: File): Promise<string> => {
@@ -68,8 +63,6 @@ export const applyMaterialTheme = (hexColor: string, dark: boolean = false) => {
     const theme = themeFromSourceColor(argb);
     
     applyTheme(theme, { target: document.body, dark });
-    setSourceColor(hexColor);
-    setIsDark(dark);
   } catch (error) {
     console.error('应用主题失败:', error);
   }
@@ -79,21 +72,9 @@ export const applyMaterialTheme = (hexColor: string, dark: boolean = false) => {
 export const applyThemeFromImage = async (file: File) => {
   try {
     const color = await extractDominantColor(file);
-    applyMaterialTheme(color, isDark());
+    applyMaterialTheme(color, false);
   } catch (error) {
     console.error('提取主题色失败:', error);
-    // 使用默认蓝色主题
-    applyMaterialTheme('#0066cc', isDark());
+    applyMaterialTheme('#0066cc', false);
   }
 };
-
-// 切换暗色模式
-export const toggleDarkMode = () => {
-  const newDark = !isDark();
-  const color = sourceColor() || '#0066cc';
-  applyMaterialTheme(color, newDark);
-};
-
-// 导出
-export const useSourceColor = () => sourceColor;
-export const useIsDark = () => isDark;

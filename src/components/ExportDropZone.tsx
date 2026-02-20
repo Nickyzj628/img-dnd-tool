@@ -1,4 +1,4 @@
-import { Show } from 'solid-js';
+import { createSignal, createEffect, Show } from 'solid-js';
 import { useImageStore, updateFileName } from '@/stores/imageStore';
 import { useAppStore } from '@/stores/imageStore';
 import { getCurrentPreset } from '@/stores/presetStore';
@@ -16,6 +16,28 @@ function formatFileSize(bytes: number): string {
 export default function ExportDropZone() {
   const imageState = useImageStore();
   const appState = useAppStore();
+  const [imageDimensions, setImageDimensions] = createSignal<{original: {width: number, height: number} | null, processed: {width: number, height: number} | null}>({original: null, processed: null});
+
+  createEffect(() => {
+    const originalDataUrl = imageState().originalDataUrl;
+    const processedDataUrl = imageState().processedDataUrl;
+    
+    if (originalDataUrl) {
+      const originalImg = new Image();
+      originalImg.onload = () => {
+        setImageDimensions(prev => ({...prev, original: {width: originalImg.width, height: originalImg.height}}));
+      };
+      originalImg.src = originalDataUrl;
+    }
+    
+    if (processedDataUrl) {
+      const processedImg = new Image();
+      processedImg.onload = () => {
+        setImageDimensions(prev => ({...prev, processed: {width: processedImg.width, height: processedImg.height}}));
+      };
+      processedImg.src = processedDataUrl;
+    }
+  });
 
   const handleDragStart = (e: DragEvent) => {
     const processedBlob = imageState().processedBlob;
@@ -24,18 +46,15 @@ export default function ExportDropZone() {
     const preset = getCurrentPreset();
     const fileName = `${imageState().fileName}.${preset.format}`;
     
-    // 创建 File 对象
     const file = new File([processedBlob], fileName, { 
       type: processedBlob.type 
     });
 
-    // 设置拖拽数据
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = 'copy';
       e.dataTransfer.setData('DownloadURL', 
         `${processedBlob.type}:${fileName}:${URL.createObjectURL(processedBlob)}`
       );
-      // 添加文件到 dataTransfer
       try {
         e.dataTransfer.items.add(file);
       } catch (err) {
@@ -52,7 +71,6 @@ export default function ExportDropZone() {
       const preset = getCurrentPreset();
       const suggestedName = `${imageState().fileName}.${preset.format}`;
       
-      // 使用 Tauri 的 dialog 让用户选择保存位置
       const savePath = await save({
         filters: [{
           name: 'Image',
@@ -62,11 +80,9 @@ export default function ExportDropZone() {
       });
 
       if (savePath) {
-        // 将 Blob 转换为 Uint8Array
         const arrayBuffer = await processedBlob.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
         
-        // 写入文件
         await writeFile(savePath, uint8Array);
         
         console.log('文件已保存到:', savePath);
@@ -77,11 +93,12 @@ export default function ExportDropZone() {
     }
   };
 
+  const preset = getCurrentPreset();
+  const dims = imageDimensions();
+
   return (
     <Show when={appState().hasProcessed}>
       <div class="export-section">
-        <h3>导出</h3>
-        
         <div class="filename-input">
           <label>文件名</label>
           <input
@@ -90,53 +107,57 @@ export default function ExportDropZone() {
             onInput={(e) => updateFileName(e.target.value)}
             placeholder="输入文件名"
           />
-          <span class="file-extension">.{getCurrentPreset().format}</span>
+          <span class="file-extension">.{preset.format}</span>
         </div>
 
-        {/* 拖拽导出区域 */}
-        <div 
-          class="drag-export-zone"
-          draggable={true}
-          onDragStart={handleDragStart}
-        >
-          <div class="drag-icon">📤</div>
-          <p class="drag-title">拖拽到任意位置</p>
-          <p class="drag-subtitle">将图片拖到文件夹或桌面</p>
+        <Show when={dims.original || dims.processed}>
+          <div class="image-info">
+            <Show when={dims.original}>
+              <span class="info-item">
+                原图: {dims.original!.width}×{dims.original!.height} {formatFileSize(imageState().originalFile?.size || 0)}
+              </span>
+            </Show>
+            <Show when={dims.processed}>
+              <span class="info-item">
+                → {dims.processed!.width}×{dims.processed!.height} {formatFileSize(imageState().processedBlob?.size || 0)}
+              </span>
+            </Show>
+          </div>
+        </Show>
+
+        <div class="export-methods">
+          <button 
+            class="export-button"
+            onClick={handleExport}
+          >
+            <span class="export-icon">💾</span>
+            <span>选择位置保存</span>
+          </button>
+
+          <div 
+            class="drag-export-zone"
+            draggable={true}
+            onDragStart={handleDragStart}
+          >
+            <div class="drag-export-content">
+              <div class="drag-icon">📤</div>
+              <span class="drag-text">拖动保存</span>
+            </div>
+          </div>
         </div>
 
-        <div class="divider"><span>或</span></div>
-
-        <button 
-          class="export-button"
-          onClick={handleExport}
-        >
-          <span class="export-icon">💾</span>
-          <span>选择位置保存</span>
-          <span class="export-hint">
-            {formatFileSize(imageState().processedBlob?.size || 0)}
-          </span>
-        </button>
-
-        <style>{
-          `
+        <style>{`
           .export-section {
             background: var(--md-sys-color-surface-container-low);
             border-radius: 16px;
             padding: 20px;
-            margin-top: 16px;
-          }
-          
-          .export-section h3 {
-            margin: 0 0 16px 0;
-            font-size: 18px;
-            color: var(--md-sys-color-on-surface);
           }
           
           .filename-input {
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
           }
           
           .filename-input label {
@@ -160,17 +181,53 @@ export default function ExportDropZone() {
             color: var(--md-sys-color-on-surface-variant);
             font-family: monospace;
           }
+
+          .image-info {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: var(--md-sys-color-on-surface-variant);
+          }
           
+          .export-methods {
+            display: flex;
+            gap: 12px;
+          }
+          
+          .export-button {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px;
+            background: var(--md-sys-color-surface);
+            color: var(--md-sys-color-primary);
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: 12px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+          }
+          
+          .export-button:hover {
+            background: var(--md-sys-color-primary-container);
+            border-color: var(--md-sys-color-primary);
+          }
+
           .drag-export-zone {
+            flex: 1;
             border: 2px dashed var(--md-sys-color-primary);
             border-radius: 12px;
-            padding: 24px;
-            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: grab;
-            transition: all 0.2s;
+            transition: background 0.2s, border-style 0.2s;
             background: var(--md-sys-color-primary-container);
             color: var(--md-sys-color-on-primary-container);
-            margin-bottom: 12px;
+            padding: 14px;
           }
           
           .drag-export-zone:hover {
@@ -182,72 +239,22 @@ export default function ExportDropZone() {
             cursor: grabbing;
           }
           
-          .drag-icon {
-            font-size: 32px;
-            margin-bottom: 8px;
-          }
-          
-          .drag-title {
-            margin: 0 0 4px 0;
-            font-weight: 600;
-            font-size: 15px;
-          }
-          
-          .drag-subtitle {
-            margin: 0;
-            font-size: 12px;
-            opacity: 0.8;
-          }
-          
-          .divider {
+          .drag-export-content {
             display: flex;
             align-items: center;
-            text-align: center;
-            margin: 12px 0;
-            color: var(--md-sys-color-on-surface-variant);
-            font-size: 13px;
-          }
-          
-          .divider::before,
-          .divider::after {
-            content: '';
-            flex: 1;
-            border-bottom: 1px solid var(--md-sys-color-outline-variant);
-          }
-          
-          .divider span {
-            padding: 0 12px;
-          }
-          
-          .export-button {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             gap: 8px;
-            padding: 12px;
-            background: var(--md-sys-color-surface);
-            color: var(--md-sys-color-primary);
-            border: 1px solid var(--md-sys-color-outline);
-            border-radius: 12px;
-            font-size: 15px;
-            cursor: pointer;
-            transition: all 0.2s;
           }
           
-          .export-button:hover {
-            background: var(--md-sys-color-primary-container);
-            border-color: var(--md-sys-color-primary);
-          }
-          
-          .export-icon {
+          .drag-icon {
             font-size: 18px;
           }
           
-          .export-hint {
-            margin-left: auto;
-            font-size: 12px;
-            color: var(--md-sys-color-on-surface-variant);
+          .drag-text {
+            font-size: 13px;
+          }
+          
+          .export-icon {
+            font-size: 16px;
           }
           `
         }</style>

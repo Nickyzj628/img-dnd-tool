@@ -6,11 +6,12 @@ import { readTextFile, writeTextFile, exists, mkdir, BaseDirectory } from '@taur
 const DEFAULT_PRESETS: Preset[] = [
   {
     id: 'default',
-    name: '默认预设',
-    format: 'webp',
+    name: '默认',
+    format: 'jpeg',
     width: 1280,
     height: 720,
     targetSize: 307200,
+    aspectRatio: '16:9',
   },
 ];
 

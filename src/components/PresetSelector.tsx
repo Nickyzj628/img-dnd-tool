@@ -31,10 +31,9 @@ export default function PresetSelector(props: PresetSelectorProps) {
   return (
     <div class="preset-selector">
       <div class="preset-header">
-        <h3>处理预设</h3>
+        <h3>选择预设</h3>
         <button class="add-button" onClick={props.onAdd}>
-          <span class="button-icon">+</span>
-          添加预设
+          新增
         </button>
       </div>
 
@@ -113,17 +112,12 @@ export default function PresetSelector(props: PresetSelectorProps) {
           border-radius: 20px;
           font-size: 14px;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: background 0.2s, border-color 0.2s;
         }
         
         .add-button:hover {
           background: var(--md-sys-color-primary-container);
           border-color: var(--md-sys-color-primary);
-        }
-        
-        .button-icon {
-          font-size: 18px;
-          font-weight: 300;
         }
         
         .preset-list {
@@ -139,7 +133,7 @@ export default function PresetSelector(props: PresetSelectorProps) {
           padding: 12px 16px;
           border-radius: 12px;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: background 0.2s;
           background: var(--md-sys-color-surface);
         }
         

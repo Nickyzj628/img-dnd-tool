@@ -150,13 +150,43 @@ export const clearError = () => {
   setAppState(prev => ({ ...prev, error: null }));
 };
 
-// 设置当前步骤
-export const setStep = (step: number) => {
-  setAppState(prev => ({ ...prev, currentStep: step }));
+// 返回上一步
+export const goBack = () => {
+  const step = appState().currentStep;
+  
+  if (step === 1) {
+    // 从调整预设返回到导入 - 清除图片状态
+    setImageState({
+      originalFile: null,
+      originalDataUrl: null,
+      processedBlob: null,
+      processedDataUrl: null,
+      fileName: '',
+    });
+    setAppState(prev => ({
+      ...prev,
+      currentStep: 0,
+      hasProcessed: false,
+      error: null,
+    }));
+  } else if (step === 2) {
+    // 从导出返回到调整预设 - 清除处理后的图片，重置文件名
+    const originalFileName = imageState().originalFile?.name.replace(/\.[^/.]+$/, '') || '';
+    setImageState(prev => ({
+      ...prev,
+      processedBlob: null,
+      processedDataUrl: null,
+      fileName: originalFileName,
+    }));
+    setAppState(prev => ({
+      ...prev,
+      currentStep: 1,
+      hasProcessed: false,
+      error: null,
+    }));
+  }
 };
 
 // 导出状态
 export const useImageStore = () => imageState;
 export const useAppStore = () => appState;
-export const getImageState = () => imageState();
-export const getAppState = () => appState();

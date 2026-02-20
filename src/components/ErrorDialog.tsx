@@ -106,7 +106,7 @@ export default function ErrorDialog() {
               border-radius: 20px;
               font-size: 14px;
               cursor: pointer;
-              transition: all 0.2s;
+              transition: opacity 0.2s;
             }
             
             .close-button:hover {

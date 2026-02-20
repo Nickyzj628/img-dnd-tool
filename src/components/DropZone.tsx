@@ -156,7 +156,7 @@ export default function DropZone() {
       />
       
       <div class="drop-content">
-        <div class="drop-icon">📷</div>
+        <img src="../src-tauri/icons/128x128.png" alt="" class="drop-icon-img" />
         <p class="drop-title">拖入图片到此处</p>
         <p class="drop-subtitle">或点击选择文件</p>
         <button 
@@ -178,7 +178,7 @@ export default function DropZone() {
           padding: 60px 32px;
           text-align: center;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: border-color 0.2s ease, background 0.2s ease;
           background: var(--md-sys-color-surface-container-low);
           min-height: 200px;
           display: flex;
@@ -196,7 +196,6 @@ export default function DropZone() {
           background: var(--md-sys-color-primary-container);
           border-style: solid;
           border-width: 3px;
-          transform: scale(1.02);
         }
         
         .drop-content {
@@ -212,6 +211,13 @@ export default function DropZone() {
           font-size: 56px;
           line-height: 1;
           margin-bottom: 8px;
+        }
+        
+        .drop-icon-img {
+          width: 64px;
+          height: 64px;
+          margin-bottom: 8px;
+          object-fit: contain;
         }
         
         .drop-title {
@@ -236,7 +242,7 @@ export default function DropZone() {
           border-radius: 24px;
           font-size: 15px;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: background 0.2s, color 0.2s;
           pointer-events: auto;
           font-weight: 500;
         }

@@ -1,155 +1,110 @@
-import { Show, For } from 'solid-js';
 import { useAppStore } from '@/stores/imageStore';
+import { goBack } from '@/stores/imageStore';
 
-interface Step {
-  id: number;
-  title: string;
-  description: string;
-}
-
-const steps: Step[] = [
-  { id: 0, title: '导入', description: '选择图片' },
-  { id: 1, title: '调整', description: '配置预设' },
-  { id: 2, title: '导出', description: '保存结果' },
-];
+const stepNames = ['导入', '调整', '导出'];
 
 export default function StepBar() {
   const appState = useAppStore();
   const currentStep = () => appState().currentStep;
 
+  const progress = () => (currentStep() / (stepNames.length - 1)) * 100;
+  const canGoBack = () => currentStep() > 0;
+
+  const handleBack = () => {
+    if (canGoBack()) {
+      goBack();
+    }
+  };
+
   return (
     <div class="step-bar">
-      <For each={steps}>
-        {(step, index) => (
-          <div 
-            class="step-item"
-            classList={{
-              active: currentStep() === step.id,
-              completed: currentStep() > step.id,
-              pending: currentStep() < step.id
-            }}
-          >
-            <div class="step-indicator">
-              <Show when={currentStep() > step.id}>
-                ✓
-              </Show>
-              <Show when={currentStep() <= step.id}>
-                {index() + 1}
-              </Show>
-            </div>
-            <div class="step-content">
-              <div class="step-title">{step.title}</div>
-              <div class="step-description">{step.description}</div>
-            </div>
-            
-            <Show when={index() < steps.length - 1}>
-              <div class="step-connector"
-                classList={{ 
-                  completed: currentStep() > step.id,
-                  active: currentStep() === step.id
-                }}
-              />
-            </Show>
-          </div>
-        )}
-      </For>
+      <button
+        class="back-button"
+        onClick={handleBack}
+        disabled={!canGoBack()}
+        aria-label="返回上一步"
+      >
+        ←
+      </button>
+      <div class="progress-track">
+        <div 
+          class="progress-fill"
+          style={{ width: `${progress()}%` }}
+        />
+      </div>
+      <div class="step-info">
+        <div class="step-label">{stepNames[currentStep()]}</div>
+      </div>
 
-      <style>{
-        `
+      <style>{`
         .step-bar {
           display: flex;
-          justify-content: space-between;
           align-items: center;
-          padding: 16px 24px;
-          background: var(--md-sys-color-surface-container);
-          border-radius: 12px;
-          margin-bottom: 16px;
+          gap: 12px;
+          padding: 8px 16px;
+          margin-bottom: 12px;
         }
 
-        .step-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          flex: 1;
-          position: relative;
-        }
-
-        .step-indicator {
+        .back-button {
           width: 28px;
           height: 28px;
-          border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 12px;
-          font-weight: 600;
-          flex-shrink: 0;
-          transition: all 0.3s ease;
-        }
-
-        .step-item.completed .step-indicator {
-          background: var(--md-sys-color-primary);
-          color: var(--md-sys-color-on-primary);
-        }
-
-        .step-item.active .step-indicator {
-          background: var(--md-sys-color-primary-container);
-          color: var(--md-sys-color-on-primary-container);
-          border: 2px solid var(--md-sys-color-primary);
-        }
-
-        .step-item.pending .step-indicator {
-          background: var(--md-sys-color-surface-variant);
-          color: var(--md-sys-color-on-surface-variant);
-        }
-
-        .step-content {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-        }
-
-        .step-title {
+          background: var(--md-sys-color-surface-container);
+          border: none;
+          border-radius: 50%;
+          cursor: pointer;
           font-size: 14px;
-          font-weight: 600;
           color: var(--md-sys-color-on-surface);
+          transition: background 0.2s;
+          flex-shrink: 0;
         }
 
-        .step-description {
-          font-size: 11px;
-          color: var(--md-sys-color-on-surface-variant);
+        .back-button:hover:not(:disabled) {
+          background: var(--md-sys-color-surface-variant);
         }
 
-        .step-item.pending .step-title {
-          color: var(--md-sys-color-on-surface-variant);
+        .back-button:disabled {
+          opacity: 0.3;
+          cursor: not-allowed;
         }
 
-        .step-item.pending .step-description {
-          opacity: 0.6;
+        .back-button:focus-visible {
+          outline: 2px solid var(--md-sys-color-primary);
+          outline-offset: 2px;
         }
 
-        .step-connector {
+        .progress-track {
           flex: 1;
-          height: 2px;
-          margin: 0 12px;
-          background: var(--md-sys-color-outline-variant);
-          transition: all 0.3s ease;
-          max-width: 60px;
+          height: 4px;
+          background: var(--md-sys-color-surface-variant);
+          border-radius: 2px;
+          overflow: hidden;
         }
 
-        .step-connector.completed {
+        .progress-fill {
+          height: 100%;
           background: var(--md-sys-color-primary);
+          border-radius: 2px;
+          transition: width 0.3s ease;
         }
 
-        .step-connector.active {
-          background: linear-gradient(
-            to right,
-            var(--md-sys-color-primary) 50%,
-            var(--md-sys-color-outline-variant) 50%
-          );
+        .step-info {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-left: auto;
         }
-        `
-      }</style>
+
+        .step-label {
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--md-sys-color-primary);
+          text-align: right;
+          min-width: 60px;
+        }
+      `}</style>
     </div>
   );
 }

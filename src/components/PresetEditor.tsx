@@ -7,6 +7,13 @@ interface PresetEditorProps {
   onClose: () => void;
 }
 
+const ASPECT_RATIO_OPTIONS = [
+  { value: '', label: '不指定' },
+  { value: '16:9', label: '16:9' },
+  { value: '4:3', label: '4:3' },
+  { value: '21:9', label: '21:9' },
+];
+
 export default function PresetEditor(props: PresetEditorProps) {
   const isEditing = () => !!props.preset;
   
@@ -17,6 +24,7 @@ export default function PresetEditor(props: PresetEditorProps) {
   const [targetSizeKB, setTargetSizeKB] = createSignal<number | ''>(
     props.preset?.targetSize ? Math.round(props.preset.targetSize / 1024) : ''
   );
+  const [aspectRatio, setAspectRatio] = createSignal<string>(props.preset?.aspectRatio || '');
 
   const handleSubmit = async () => {
     if (!name().trim()) {
@@ -30,6 +38,7 @@ export default function PresetEditor(props: PresetEditorProps) {
       width: width() === '' ? null : Number(width()),
       height: height() === '' ? null : Number(height()),
       targetSize: targetSizeKB() === '' ? null : Number(targetSizeKB()) * 1024,
+      aspectRatio: aspectRatio() || null,
     };
 
     try {
@@ -51,24 +60,67 @@ export default function PresetEditor(props: PresetEditorProps) {
       <div class="preset-editor" onClick={(e) => e.stopPropagation()}>
         <h2>{isEditing() ? '编辑预设' : '添加预设'}</h2>
 
-        <div class="form-field">
-          <label>预设名称</label>
-          <input
-            type="text"
-            value={name()}
-            onInput={(e) => setName(e.target.value)}
-            placeholder="例如：社交媒体优化"
-          />
-        </div>
-
-        <div class="form-row">
+        <div class="form-content">
           <div class="form-field">
-            <label>目标格式</label>
-            <select value={format()} onChange={(e) => setFormat(e.target.value as Preset['format'])}>
-              <option value="webp">WebP</option>
-              <option value="jpeg">JPEG</option>
-              <option value="png">PNG</option>
-            </select>
+            <label>预设名称</label>
+            <input
+              type="text"
+              value={name()}
+              onInput={(e) => setName(e.target.value)}
+              placeholder="例如：社交媒体优化"
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-field">
+              <label>目标格式</label>
+              <select value={format()} onChange={(e) => setFormat(e.target.value as Preset['format'])}>
+                <option value="webp">WebP</option>
+                <option value="jpeg">JPEG</option>
+                <option value="png">PNG</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label>比例</label>
+              <select value={aspectRatio()} onChange={(e) => setAspectRatio(e.target.value)}>
+                {ASPECT_RATIO_OPTIONS.map(option => (
+                  <option value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-field">
+              <label>宽度 (px，留空保持原宽)</label>
+              <input
+                type="number"
+                min="100"
+                max="8192"
+                value={width()}
+                onInput={(e) => {
+                  const val = e.target.value;
+                  setWidth(val === '' ? '' : parseInt(val) || '');
+                }}
+                placeholder="保持原宽"
+              />
+            </div>
+
+            <div class="form-field">
+              <label>高度 (px，留空保持原高)</label>
+              <input
+                type="number"
+                min="100"
+                max="8192"
+                value={height()}
+                onInput={(e) => {
+                  const val = e.target.value;
+                  setHeight(val === '' ? '' : parseInt(val) || '');
+                }}
+                placeholder="保持原高"
+              />
+            </div>
           </div>
 
           <div class="form-field">
@@ -87,46 +139,13 @@ export default function PresetEditor(props: PresetEditorProps) {
           </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-field">
-            <label>宽度 (px，留空保持原宽)</label>
-            <input
-              type="number"
-              min="100"
-              max="8192"
-              value={width()}
-              onInput={(e) => {
-                const val = e.target.value;
-                setWidth(val === '' ? '' : parseInt(val) || '');
-              }}
-              placeholder="保持原宽"
-            />
-          </div>
-
-          <div class="form-field">
-            <label>高度 (px，留空保持原高)</label>
-            <input
-              type="number"
-              min="100"
-              max="8192"
-              value={height()}
-              onInput={(e) => {
-                const val = e.target.value;
-                setHeight(val === '' ? '' : parseInt(val) || '');
-              }}
-              placeholder="保持原高"
-            />
-          </div>
-        </div>
-
         <div class="form-actions">
           <button class="cancel-button" onClick={props.onClose}>取消</button>
           <button class="save-button" onClick={handleSubmit}>保存</button>
         </div>
       </div>
 
-      <style>{
-        `
+      <style>{`
         .preset-editor-overlay {
           position: fixed;
           top: 0;
@@ -144,15 +163,23 @@ export default function PresetEditor(props: PresetEditorProps) {
           background: var(--md-sys-color-surface);
           border-radius: 28px;
           padding: 24px;
-          min-width: 400px;
-          max-width: 500px;
+          width: 95%;
+          height: 90%;
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+          display: flex;
+          flex-direction: column;
         }
         
         .preset-editor h2 {
           margin: 0 0 20px 0;
           font-size: 24px;
           color: var(--md-sys-color-on-surface);
+          flex-shrink: 0;
+        }
+
+        .form-content {
+          overflow-y: auto;
+          flex: 1;
         }
         
         .form-field {
@@ -200,6 +227,7 @@ export default function PresetEditor(props: PresetEditorProps) {
           justify-content: flex-end;
           gap: 8px;
           margin-top: 24px;
+          flex-shrink: 0;
         }
         
         .cancel-button {
@@ -210,7 +238,7 @@ export default function PresetEditor(props: PresetEditorProps) {
           border-radius: 20px;
           font-size: 14px;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: background 0.2s;
         }
         
         .cancel-button:hover {
@@ -225,15 +253,14 @@ export default function PresetEditor(props: PresetEditorProps) {
           border-radius: 20px;
           font-size: 14px;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: background 0.2s, color 0.2s;
         }
         
         .save-button:hover {
           background: var(--md-sys-color-primary-container);
           color: var(--md-sys-color-on-primary-container);
         }
-        `
-      }</style>
+      `}</style>
     </div>
   );
 }

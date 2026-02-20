@@ -12,11 +12,11 @@
   "app": {
     "windows": [
       {
-        "title": "图片处理工具",
-        "width": 800,
-        "height": 500,
-        "minWidth": 700,
-        "minHeight": 450,
+        "title": "Image Drag-and-Drop Tool",
+        "width": 600,
+        "height": 400,
+        "minWidth": 500,
+        "minHeight": 350,
         "resizable": true,
         "fullscreen": false,
         "dragDropEnabled": true
@@ -30,7 +30,7 @@
     "active": true,
     "targets": "all",
     "icon": [
-      "icons/icon.svg"
+      "icons/icon.png"
     ]
   }
 }
