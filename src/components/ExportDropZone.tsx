@@ -110,20 +110,32 @@ export default function ExportDropZone() {
           <span class="file-extension">.{preset.format}</span>
         </div>
 
-        <Show when={dims.original || dims.processed}>
-          <div class="image-info">
-            <Show when={dims.original}>
-              <span class="info-item">
-                原图: {dims.original!.width}×{dims.original!.height} {formatFileSize(imageState().originalFile?.size || 0)}
-              </span>
-            </Show>
-            <Show when={dims.processed}>
-              <span class="info-item">
-                → {dims.processed!.width}×{dims.processed!.height} {formatFileSize(imageState().processedBlob?.size || 0)}
-              </span>
-            </Show>
-          </div>
-        </Show>
+        <div class="image-info-table">
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th>宽高</th>
+                <th>格式</th>
+                <th>大小</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="row-label">原图</td>
+                <td>{dims.original ? `${dims.original.width}×${dims.original.height}` : '-'}</td>
+                <td>{imageState().originalFile?.type.replace('image/', '').toUpperCase() || '-'}</td>
+                <td>{formatFileSize(imageState().originalFile?.size || 0)}</td>
+              </tr>
+              <tr>
+                <td class="row-label">结果</td>
+                <td>{dims.processed ? `${dims.processed.width}×${dims.processed.height}` : '-'}</td>
+                <td>{preset.format.toUpperCase()}</td>
+                <td>{formatFileSize(imageState().processedBlob?.size || 0)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         <div class="export-methods">
           <button 
@@ -141,7 +153,7 @@ export default function ExportDropZone() {
           >
             <div class="drag-export-content">
               <div class="drag-icon">📤</div>
-              <span class="drag-text">拖动保存</span>
+              <span class="drag-text">拖动到任意位置保存</span>
             </div>
           </div>
         </div>
@@ -182,12 +194,48 @@ export default function ExportDropZone() {
             font-family: monospace;
           }
 
-          .image-info {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
+          .image-info-table {
+            margin: 16px 0;
+            background: var(--md-sys-color-surface);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--md-sys-color-outline-variant);
+          }
+          
+          .image-info-table table {
+            width: 100%;
+            border-collapse: collapse;
             font-size: 13px;
+          }
+          
+          .image-info-table th {
+            background: var(--md-sys-color-surface-container);
             color: var(--md-sys-color-on-surface-variant);
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: 500;
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+          }
+          
+          .image-info-table th:first-child {
+            width: 60px;
+          }
+          
+          .image-info-table td {
+            padding: 10px 8px;
+            text-align: center;
+            color: var(--md-sys-color-on-surface);
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+          }
+          
+          .image-info-table tr:last-child td {
+            border-bottom: none;
+          }
+          
+          .image-info-table .row-label {
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface-variant);
+            background: var(--md-sys-color-surface-container);
           }
           
           .export-methods {

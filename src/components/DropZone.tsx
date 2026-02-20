@@ -1,5 +1,5 @@
-import { createSignal, onMount, onCleanup } from 'solid-js';
-import { loadOriginalImage } from '@/stores/imageStore';
+import { createSignal, onMount, onCleanup, Show } from 'solid-js';
+import { loadOriginalImage, useAppStore } from '@/stores/imageStore';
 import { applyThemeFromImage } from '@/stores/themeStore';
 import { listen } from '@tauri-apps/api/event';
 import { readFile } from '@tauri-apps/plugin-fs';
@@ -7,6 +7,8 @@ import { readFile } from '@tauri-apps/plugin-fs';
 export default function DropZone() {
   const [isDragging, setIsDragging] = createSignal(false);
   let fileInputRef: HTMLInputElement | undefined;
+  const appState = useAppStore();
+  const currentStep = () => appState().currentStep;
 
   const processFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -56,10 +58,16 @@ export default function DropZone() {
   onMount(async () => {
     console.log('DropZone 挂载，注册 Tauri 事件监听');
     
-    // 监听 Tauri 的拖拽事件
+    // 监听 Tauri 的拖拽事件 - 仅在导入阶段响应
     const unlistenDrop = await listen<{ paths: string[] }>('tauri://drag-drop', async (event) => {
       console.log('✅ Tauri 拖拽 drop 事件:', event);
       setIsDragging(false);
+      
+      // 仅在导入阶段处理拖拽
+      if (currentStep() !== 0) {
+        console.log('⛔ 非导入阶段，忽略拖拽');
+        return;
+      }
       
       if (event.payload?.paths?.length > 0) {
         const path = event.payload.paths[0];
@@ -68,21 +76,24 @@ export default function DropZone() {
       }
     });
 
-    // 监听拖拽进入事件
+    // 监听拖拽进入事件 - 仅在导入阶段响应
     const unlistenEnter = await listen('tauri://drag-enter', (event) => {
+      if (currentStep() !== 0) {
+        console.log('⛔ 非导入阶段，忽略拖拽进入');
+        return;
+      }
       console.log('👆 Tauri 拖拽进入窗口:', event);
       setIsDragging(true);
     });
 
     // 监听拖拽离开事件
     const unlistenLeave = await listen('tauri://drag-leave', () => {
-      console.log('👋 Tauri 拖拽离开窗口');
       setIsDragging(false);
     });
 
-    // 监听拖拽在窗口上方移动
+    // 监听拖拽在窗口上方移动 - 仅在导入阶段响应
     const unlistenOver = await listen('tauri://drag-over', () => {
-      // 可以在这里更新拖拽位置
+      // 仅在导入阶段处理
     });
 
     // 清理函数
@@ -97,21 +108,25 @@ export default function DropZone() {
 
   // 保持原有的 HTML5 拖拽 API 作为后备
   const handleDragEnter = (e: DragEvent) => {
+    if (currentStep() !== 0) return;
     e.preventDefault();
     e.stopPropagation();
   };
 
   const handleDragOver = (e: DragEvent) => {
+    if (currentStep() !== 0) return;
     e.preventDefault();
     e.stopPropagation();
   };
 
   const handleDragLeave = (e: DragEvent) => {
+    if (currentStep() !== 0) return;
     e.preventDefault();
     e.stopPropagation();
   };
 
   const handleDrop = async (e: DragEvent) => {
+    if (currentStep() !== 0) return;
     e.preventDefault();
     e.stopPropagation();
     
