@@ -1,5 +1,6 @@
-import { createSignal, Show } from 'solid-js';
+import { createSignal, Show, createEffect } from 'solid-js';
 import { addPreset, updatePreset } from '@/stores/presetStore';
+import { useImageStore } from '@/stores/imageStore';
 import type { Preset } from '@/types';
 
 interface PresetEditorProps {
@@ -7,14 +8,8 @@ interface PresetEditorProps {
   onClose: () => void;
 }
 
-const ASPECT_RATIO_OPTIONS = [
-  { value: '', label: '不指定' },
-  { value: '16:9', label: '16:9' },
-  { value: '4:3', label: '4:3' },
-  { value: '21:9', label: '21:9' },
-];
-
 export default function PresetEditor(props: PresetEditorProps) {
+  const imageStore = useImageStore();
   const isEditing = () => !!props.preset;
   
   const [name, setName] = createSignal(props.preset?.name || '');
@@ -24,7 +19,67 @@ export default function PresetEditor(props: PresetEditorProps) {
   const [targetSizeKB, setTargetSizeKB] = createSignal<number | ''>(
     props.preset?.targetSize ? Math.round(props.preset.targetSize / 1024) : ''
   );
-  const [aspectRatio, setAspectRatio] = createSignal<string>(props.preset?.aspectRatio || '');
+  
+  // 获取原图尺寸和比例
+  const originalImage = () => {
+    const state = imageStore();
+    if (state.originalFile) {
+      return {
+        width: state.originalWidth || 0,
+        height: state.originalHeight || 0,
+      };
+    }
+    return null;
+  };
+  
+  // 获取原图比例
+  const getOriginalRatio = () => {
+    const img = originalImage();
+    if (img && img.width > 0 && img.height > 0) {
+      return img.width / img.height;
+    }
+    return null;
+  };
+  
+  // 获取最大限制尺寸
+  const maxDimensions = () => {
+    const img = originalImage();
+    return img ? { width: img.width, height: img.height } : { width: 8192, height: 8192 };
+  };
+
+  // 安全的数值解析
+  const safeParseInt = (value: string, max: number): number | '' => {
+    if (value === '') return '';
+    const num = parseInt(value) || 0;
+    if (num <= 0) return '';
+    return Math.min(num, max);
+  };
+  
+  // 处理宽度输入 - 自动根据原图比例计算高度
+  const handleWidthChange = (value: string) => {
+    const numValue = safeParseInt(value, maxDimensions().width);
+    setWidth(numValue);
+    
+    // 如果有原图比例，同步计算高度
+    const ratio = getOriginalRatio();
+    if (ratio && typeof numValue === 'number') {
+      const newHeight = Math.round(numValue / ratio);
+      setHeight(Math.min(newHeight, maxDimensions().height));
+    }
+  };
+  
+  // 处理高度输入 - 自动根据原图比例计算宽度
+  const handleHeightChange = (value: string) => {
+    const numValue = safeParseInt(value, maxDimensions().height);
+    setHeight(numValue);
+    
+    // 如果有原图比例，同步计算宽度
+    const ratio = getOriginalRatio();
+    if (ratio && typeof numValue === 'number') {
+      const newWidth = Math.round(numValue * ratio);
+      setWidth(Math.min(newWidth, maxDimensions().width));
+    }
+  };
 
   const handleSubmit = async () => {
     if (!name().trim()) {
@@ -38,7 +93,6 @@ export default function PresetEditor(props: PresetEditorProps) {
       width: width() === '' ? null : Number(width()),
       height: height() === '' ? null : Number(height()),
       targetSize: targetSizeKB() === '' ? null : Number(targetSizeKB()) * 1024,
-      aspectRatio: aspectRatio() || null,
     };
 
     try {
@@ -71,57 +125,53 @@ export default function PresetEditor(props: PresetEditorProps) {
             />
           </div>
 
-          <div class="form-row">
-            <div class="form-field">
-              <label>目标格式</label>
-              <select value={format()} onChange={(e) => setFormat(e.target.value as Preset['format'])}>
-                <option value="webp">WebP</option>
-                <option value="jpeg">JPEG</option>
-                <option value="png">PNG</option>
-              </select>
-            </div>
-
-            <div class="form-field">
-              <label>比例</label>
-              <select value={aspectRatio()} onChange={(e) => setAspectRatio(e.target.value)}>
-                {ASPECT_RATIO_OPTIONS.map(option => (
-                  <option value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </div>
+          <div class="form-field">
+            <label>目标格式</label>
+            <select value={format()} onChange={(e) => setFormat(e.target.value as Preset['format'])}>
+              <option value="webp">WebP</option>
+              <option value="jpeg">JPEG</option>
+              <option value="png">PNG</option>
+            </select>
           </div>
 
           <div class="form-row">
             <div class="form-field">
-              <label>宽度 (px，留空保持原宽)</label>
+              <label>
+                宽度 (px)
+                <span class="input-hint">锁定比例</span>
+              </label>
               <input
                 type="number"
-                min="100"
-                max="8192"
+                min="1"
+                max={maxDimensions().width}
                 value={width()}
-                onInput={(e) => {
-                  const val = e.target.value;
-                  setWidth(val === '' ? '' : parseInt(val) || '');
-                }}
+                onInput={(e) => handleWidthChange(e.target.value)}
                 placeholder="保持原宽"
               />
             </div>
 
             <div class="form-field">
-              <label>高度 (px，留空保持原高)</label>
+              <label>
+                高度 (px)
+                <span class="input-hint">自动计算</span>
+              </label>
               <input
                 type="number"
-                min="100"
-                max="8192"
+                min="1"
+                max={maxDimensions().height}
                 value={height()}
-                onInput={(e) => {
-                  const val = e.target.value;
-                  setHeight(val === '' ? '' : parseInt(val) || '');
-                }}
+                onInput={(e) => handleHeightChange(e.target.value)}
                 placeholder="保持原高"
               />
             </div>
           </div>
+
+          <Show when={originalImage()}>
+            <div class="ratio-info">
+              原图比例: {originalImage()?.width}×{originalImage()?.height} 
+              (比例 {getOriginalRatio()?.toFixed(2) || '-'})
+            </div>
+          </Show>
 
           <div class="form-field">
             <label>目标大小 (KB，留空不限制)</label>
@@ -193,6 +243,16 @@ export default function PresetEditor(props: PresetEditorProps) {
           font-size: 14px;
           font-weight: 500;
           color: var(--md-sys-color-on-surface-variant);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        
+        .input-hint {
+          font-size: 12px;
+          color: var(--md-sys-color-on-surface-variant);
+          opacity: 0.7;
+          font-weight: 400;
         }
         
         .form-field input,
@@ -259,6 +319,17 @@ export default function PresetEditor(props: PresetEditorProps) {
         .save-button:hover {
           background: var(--md-sys-color-primary-container);
           color: var(--md-sys-color-on-primary-container);
+        }
+        
+        .ratio-info {
+          font-size: 12px;
+          color: var(--md-sys-color-on-surface-variant);
+          text-align: center;
+          padding: 8px;
+          background: var(--md-sys-color-surface-container);
+          border-radius: 8px;
+          margin-top: -8px;
+          margin-bottom: 16px;
         }
       `}</style>
     </div>

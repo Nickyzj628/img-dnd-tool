@@ -5,8 +5,12 @@ import { ImageState, AppState } from '@/types';
 const [imageState, setImageState] = createSignal<ImageState>({
   originalFile: null,
   originalDataUrl: null,
+  originalWidth: null,
+  originalHeight: null,
   processedBlob: null,
   processedDataUrl: null,
+  processedWidth: null,
+  processedHeight: null,
   fileName: '',
 });
 
@@ -18,6 +22,41 @@ const [appState, setAppState] = createSignal<AppState>({
   currentStep: 0,
 });
 
+// 计算目标尺寸，根据规则处理宽高
+function calculateTargetDimensions(
+  originalWidth: number,
+  originalHeight: number,
+  targetWidth: number | null,
+  targetHeight: number | null
+): { width: number; height: number } {
+  const originalRatio = originalWidth / originalHeight;
+  
+  // 限制最大值不超过原图尺寸
+  const maxWidth = originalWidth;
+  const maxHeight = originalHeight;
+  
+  if (targetWidth !== null && targetHeight !== null) {
+    // 同时填写宽高 → 压缩到对应宽高（限制不超过原图）
+    return {
+      width: Math.min(targetWidth, maxWidth),
+      height: Math.min(targetHeight, maxHeight)
+    };
+  } else if (targetWidth !== null && targetHeight === null) {
+    // 只填宽度 → 按原图比例计算高度
+    const newWidth = Math.min(targetWidth, maxWidth);
+    const newHeight = Math.round(newWidth / originalRatio);
+    return { width: newWidth, height: Math.min(newHeight, maxHeight) };
+  } else if (targetWidth === null && targetHeight !== null) {
+    // 只填高度 → 按原图比例计算宽度
+    const newHeight = Math.min(targetHeight, maxHeight);
+    const newWidth = Math.round(newHeight * originalRatio);
+    return { width: Math.min(newWidth, maxWidth), height: newHeight };
+  } else {
+    // 都未填写 → 保持原图尺寸
+    return { width: originalWidth, height: originalHeight };
+  }
+}
+
 // 处理图片 - 支持可选参数
 export const processImage = async (
   file: File,
@@ -28,30 +67,31 @@ export const processImage = async (
 ): Promise<Blob> => {
   const imageCompression = await import('browser-image-compression');
   
+  // 获取原图尺寸
+  const img = new Image();
+  const originalDimensions = await new Promise<{ width: number; height: number }>((resolve) => {
+    img.onload = () => resolve({ width: img.width, height: img.height });
+    img.src = URL.createObjectURL(file);
+  });
+  URL.revokeObjectURL(img.src);
+  
+  // 计算目标尺寸
+  const targetDims = calculateTargetDimensions(
+    originalDimensions.width,
+    originalDimensions.height,
+    width,
+    height
+  );
+  
   // 构建选项
   const options: any = {
     fileType: `image/${format}`,
     initialQuality: 0.92,
     alwaysKeepResolution: false,
     preserveExif: false,
+    // 使用精确的目标尺寸
+    maxWidthOrHeight: Math.max(targetDims.width, targetDims.height),
   };
-
-  // 如果指定了尺寸，添加 maxWidthOrHeight
-  if (width || height) {
-    // 如果有原图尺寸，获取它
-    const img = new Image();
-    const imgLoaded = new Promise<{ width: number; height: number }>((resolve) => {
-      img.onload = () => resolve({ width: img.width, height: img.height });
-      img.src = URL.createObjectURL(file);
-    });
-    const originalSize = await imgLoaded;
-    URL.revokeObjectURL(img.src);
-    
-    // 使用指定的尺寸或原尺寸
-    const targetWidth = width || originalSize.width;
-    const targetHeight = height || originalSize.height;
-    options.maxWidthOrHeight = Math.max(targetWidth, targetHeight);
-  }
 
   let compressedFile = await imageCompression.default(file, options);
   
@@ -80,11 +120,23 @@ export const readFileAsDataUrl = (file: File): Promise<string> => {
 // 加载原图
 export const loadOriginalImage = async (file: File) => {
   const dataUrl = await readFileAsDataUrl(file);
+  
+  // 获取原图尺寸
+  const img = new Image();
+  const dimensions = await new Promise<{ width: number; height: number }>((resolve) => {
+    img.onload = () => resolve({ width: img.width, height: img.height });
+    img.src = dataUrl;
+  });
+  
   setImageState({
     originalFile: file,
     originalDataUrl: dataUrl,
+    originalWidth: dimensions.width,
+    originalHeight: dimensions.height,
     processedBlob: null,
     processedDataUrl: null,
+    processedWidth: null,
+    processedHeight: null,
     fileName: file.name.replace(/\.[^/.]+$/, ''),
   });
   setAppState(prev => ({ 
@@ -120,10 +172,19 @@ export const executeProcess = async (
       new File([processedBlob], 'processed', { type: processedBlob.type })
     );
 
+    // 获取处理后图片的尺寸
+    const processedImg = new Image();
+    const processedDimensions = await new Promise<{ width: number; height: number }>((resolve) => {
+      processedImg.onload = () => resolve({ width: processedImg.width, height: processedImg.height });
+      processedImg.src = processedDataUrl;
+    });
+
     setImageState(prev => ({
       ...prev,
       processedBlob,
       processedDataUrl,
+      processedWidth: processedDimensions.width,
+      processedHeight: processedDimensions.height,
     }));
     setAppState(prev => ({ 
       ...prev, 
@@ -159,8 +220,12 @@ export const goBack = () => {
     setImageState({
       originalFile: null,
       originalDataUrl: null,
+      originalWidth: null,
+      originalHeight: null,
       processedBlob: null,
       processedDataUrl: null,
+      processedWidth: null,
+      processedHeight: null,
       fileName: '',
     });
     setAppState(prev => ({

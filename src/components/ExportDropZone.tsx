@@ -1,4 +1,4 @@
-import { createSignal, createEffect, Show } from 'solid-js';
+import { Show } from 'solid-js';
 import { useImageStore, updateFileName } from '@/stores/imageStore';
 import { useAppStore } from '@/stores/imageStore';
 import { getCurrentPreset } from '@/stores/presetStore';
@@ -16,28 +16,19 @@ function formatFileSize(bytes: number): string {
 export default function ExportDropZone() {
   const imageState = useImageStore();
   const appState = useAppStore();
-  const [imageDimensions, setImageDimensions] = createSignal<{original: {width: number, height: number} | null, processed: {width: number, height: number} | null}>({original: null, processed: null});
-
-  createEffect(() => {
-    const originalDataUrl = imageState().originalDataUrl;
-    const processedDataUrl = imageState().processedDataUrl;
-    
-    if (originalDataUrl) {
-      const originalImg = new Image();
-      originalImg.onload = () => {
-        setImageDimensions(prev => ({...prev, original: {width: originalImg.width, height: originalImg.height}}));
-      };
-      originalImg.src = originalDataUrl;
-    }
-    
-    if (processedDataUrl) {
-      const processedImg = new Image();
-      processedImg.onload = () => {
-        setImageDimensions(prev => ({...prev, processed: {width: processedImg.width, height: processedImg.height}}));
-      };
-      processedImg.src = processedDataUrl;
-    }
-  });
+  
+  // 直接从store获取尺寸
+  const getDimensions = () => {
+    const state = imageState();
+    return {
+      original: state.originalWidth && state.originalHeight 
+        ? { width: state.originalWidth, height: state.originalHeight }
+        : null,
+      processed: state.processedWidth && state.processedHeight
+        ? { width: state.processedWidth, height: state.processedHeight }
+        : null
+    };
+  };
 
   const handleDragStart = (e: DragEvent) => {
     const processedBlob = imageState().processedBlob;
@@ -94,7 +85,7 @@ export default function ExportDropZone() {
   };
 
   const preset = getCurrentPreset();
-  const dims = imageDimensions();
+  const dims = getDimensions();
 
   return (
     <Show when={appState().hasProcessed}>

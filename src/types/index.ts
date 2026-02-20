@@ -6,15 +6,18 @@ export interface Preset {
   width: number | null;      // null 表示保持原宽度
   height: number | null;     // null 表示保持原高度
   targetSize: number | null; // null 表示不限制大小，单位字节
-  aspectRatio: string | null; // 比例：'16:9' | '4:3' | '21:9' | null
 }
 
 // 图片处理状态
 export interface ImageState {
   originalFile: File | null;
   originalDataUrl: string | null;
+  originalWidth: number | null;
+  originalHeight: number | null;
   processedBlob: Blob | null;
   processedDataUrl: string | null;
+  processedWidth: number | null;
+  processedHeight: number | null;
   fileName: string;
 }
 

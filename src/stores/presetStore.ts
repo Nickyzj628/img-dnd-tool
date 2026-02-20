@@ -11,7 +11,6 @@ const DEFAULT_PRESETS: Preset[] = [
     width: 1280,
     height: 720,
     targetSize: 307200,
-    aspectRatio: '16:9',
   },
 ];
 
