@@ -2,7 +2,7 @@
 
 基于 Tauri + SolidJS + Material You 设计的图片处理工具。
 
-![演示](public\preview.gif)
+![演示](public/preview.gif)
 
 ## 特点
 
