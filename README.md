@@ -1,23 +1,23 @@
-# 图片处理工具
+# Image Drag-and-Drop Tool
 
-基于 Tauri + SolidJS + Material You 设计的图片处理桌面应用。
+基于 Tauri + SolidJS + Material You 设计的图片处理工具。
 
-## 功能特性
+![演示](public\preview.gif)
 
-- 🎨 **Material You 动态主题** - 自动从图片提取主题色
-- 🖼️ **图片拖入** - 支持拖拽或点击选择图片
-- ⚙️ **预设管理** - 可自定义处理预设，持久化存储
-- 👁️ **对比预览** - Squoosh 风格左右对比查看处理前后效果
-- 🔄 **图片处理** - 压缩、缩放、格式转换（WebP/JPEG/PNG）
-- 💾 **导出功能** - 点击下载或拖拽导出处理后的图片
+## 特点
+
+- 支持拖入原始图片，拖出处理后图片
+- 提供开箱即用的压缩预设，且支持自定义、持久化存储
+- 支持压缩、等比例缩放、转换格式（JPG/PNG/WebP/AVIF）
+- **Material You 动态主题** - 自动从图片提取主题色
 
 ## 技术栈
 
 - **桌面框架**: Tauri v2
-- **前端框架**: SolidJS + TypeScript
-- **UI 组件**: @material/web (Material You 官方组件)
-- **图片处理**: browser-image-compression (WASM)
 - **包管理**: Bun
+- **前端框架**: TypeScript + SolidJS
+- **组件库**: @material/web (Material You 官方组件)
+- **图片处理**: browser-image-compression (WASM)
 
 ## 快速开始
 
@@ -27,13 +27,13 @@
 bun install
 ```
 
-### 开发模式
+### 启动开发环境
 
 ```bash
 bun run tauri:dev
 ```
 
-### 构建应用
+### 打包成单文件
 
 ```bash
 bun run tauri:build
@@ -57,19 +57,11 @@ img-dnd-tool/
 └── package.json
 ```
 
-## 使用说明
-
-1. **拖入图片** - 将图片拖入应用或使用选择文件按钮
-2. **选择预设** - 从预设列表中选择或创建新的预设
-3. **调整参数** - 预设包含格式、尺寸、目标大小等参数
-4. **开始处理** - 点击"开始处理"按钮生成结果
-5. **导出图片** - 点击下载或拖拽导出处理后的图片
-
 ## 预设配置
 
 预设存储在系统配置目录下（`~/.config/img-dnd-tool/presets.json`），包含以下参数：
 
-- `format`: 目标格式 (webp/jpeg/png)
+- `format`: 目标格式 (jpg/png/webp/avif)
 - `width`: 目标宽度
 - `height`: 目标高度
 - `targetSize`: 目标文件大小（字节）
