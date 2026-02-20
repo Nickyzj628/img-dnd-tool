@@ -1,0 +1,36 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "图片处理工具",
+  "version": "0.1.0",
+  "identifier": "com.imgdndtool.app",
+  "build": {
+    "beforeDevCommand": "bun run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "bun run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "图片处理工具",
+        "width": 800,
+        "height": 500,
+        "minWidth": 700,
+        "minHeight": 450,
+        "resizable": true,
+        "fullscreen": false,
+        "dragDropEnabled": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/icon.svg"
+    ]
+  }
+}
