@@ -1,4 +1,4 @@
-import { Show } from 'solid-js';
+import { Show, createMemo } from 'solid-js';
 import { useImageStore, updateFileName } from '@/stores/imageStore';
 import { useAppStore } from '@/stores/imageStore';
 import { getCurrentPreset } from '@/stores/presetStore';
@@ -17,6 +17,18 @@ export default function ExportDropZone() {
   const imageState = useImageStore();
   const appState = useAppStore();
   
+  // 获取有效的文件格式（预设格式或原图格式）
+  const getEffectiveFormat = createMemo(() => {
+    const preset = getCurrentPreset();
+    if (preset.format) {
+      return preset.format;
+    }
+    // 从原图 MIME 类型中提取格式
+    const originalType = imageState().originalFile?.type || '';
+    const format = originalType.replace('image/', '');
+    return format || 'webp';
+  });
+  
   // 直接从store获取尺寸
   const getDimensions = () => {
     const state = imageState();
@@ -34,8 +46,7 @@ export default function ExportDropZone() {
     const processedBlob = imageState().processedBlob;
     if (!processedBlob) return;
 
-    const preset = getCurrentPreset();
-    const fileName = `${imageState().fileName}.${preset.format}`;
+    const fileName = `${imageState().fileName}.${getEffectiveFormat()}`;
     
     const file = new File([processedBlob], fileName, { 
       type: processedBlob.type 
@@ -59,13 +70,13 @@ export default function ExportDropZone() {
     if (!processedBlob) return;
 
     try {
-      const preset = getCurrentPreset();
-      const suggestedName = `${imageState().fileName}.${preset.format}`;
+      const effectiveFormat = getEffectiveFormat();
+      const suggestedName = `${imageState().fileName}.${effectiveFormat}`;
       
       const savePath = await save({
         filters: [{
           name: 'Image',
-          extensions: [preset.format]
+          extensions: [effectiveFormat]
         }],
         defaultPath: suggestedName,
       });
@@ -84,7 +95,6 @@ export default function ExportDropZone() {
     }
   };
 
-  const preset = getCurrentPreset();
   const dims = getDimensions();
 
   return (
@@ -98,7 +108,7 @@ export default function ExportDropZone() {
             onInput={(e) => updateFileName(e.target.value)}
             placeholder="输入文件名"
           />
-          <span class="file-extension">.{preset.format}</span>
+          <span class="file-extension">.{getEffectiveFormat()}</span>
         </div>
 
         <div class="image-info-table">
@@ -121,7 +131,7 @@ export default function ExportDropZone() {
               <tr>
                 <td class="row-label">结果</td>
                 <td>{dims.processed ? `${dims.processed.width}×${dims.processed.height}` : '-'}</td>
-                <td>{preset.format.toUpperCase()}</td>
+                <td>{getEffectiveFormat().toUpperCase()}</td>
                 <td>{formatFileSize(imageState().processedBlob?.size || 0)}</td>
               </tr>
             </tbody>

@@ -5,19 +5,54 @@ import { readTextFile, writeTextFile, exists, mkdir, BaseDirectory } from '@taur
 
 const DEFAULT_PRESETS: Preset[] = [
   {
-    id: 'default',
-    name: '默认',
-    format: 'jpeg',
-    width: 1280,
-    height: 720,
-    targetSize: 307200,
+    id: 'preset_1',
+    name: '不处理',
+    format: null,
+    width: null,
+    height: null,
+    targetSize: null,
+  },
+  {
+    id: 'preset_2',
+    name: '仅转换格式',
+    format: 'webp',
+    width: null,
+    height: null,
+    targetSize: null,
+  },
+  {
+    id: 'preset_3',
+    name: '仅缩小尺寸',
+    format: null,
+    width: 512,
+    height: null,
+    targetSize: null,
+  },
+  {
+    id: 'preset_4',
+    name: '压缩体积',
+    format: 'webp',
+    width: null,
+    height: null,
+    targetSize: 307200, // 300KB
+  },
+  {
+    id: 'preset_5',
+    name: '极限压缩',
+    format: 'webp',
+    width: 300,
+    height: null,
+    targetSize: 102400, // 100KB
   },
 ];
 
 const PRESETS_FILE = 'presets.json';
 
 const [presets, setPresets] = createSignal<Preset[]>(DEFAULT_PRESETS);
-const [currentPresetId, setCurrentPresetId] = createSignal<string>('default');
+const [currentPresetId, setCurrentPresetId] = createSignal<string>(DEFAULT_PRESETS[0].id);
+const [resetVersion, setResetVersion] = createSignal(0);
+
+export const getResetVersion = () => resetVersion;
 
 export const getCurrentPreset = () => {
   return presets().find(p => p.id === currentPresetId()) || presets()[0];
@@ -39,6 +74,17 @@ export const loadPresets = async () => {
   } catch (error) {
     console.error('加载预设失败:', error);
     setPresets(DEFAULT_PRESETS);
+  }
+};
+
+export const resetPresets = async () => {
+  try {
+    await savePresets(DEFAULT_PRESETS);
+    setCurrentPresetId(DEFAULT_PRESETS[0].id);
+    setResetVersion(v => v + 1);
+  } catch (error) {
+    console.error('重置预设失败:', error);
+    throw error;
   }
 };
 
@@ -83,11 +129,16 @@ export const updatePreset = async (id: string, updates: Partial<Preset>) => {
 };
 
 export const deletePreset = async (id: string) => {
-  if (id === 'default') return;
   const newPresets = presets().filter(p => p.id !== id);
-  await savePresets(newPresets);
-  if (currentPresetId() === id) {
-    setCurrentPresetId('default');
+  if (newPresets.length === 0) {
+    // 如果删除后没有预设了，重置为默认预设
+    await savePresets(DEFAULT_PRESETS);
+    setCurrentPresetId(DEFAULT_PRESETS[0].id);
+  } else {
+    await savePresets(newPresets);
+    if (currentPresetId() === id) {
+      setCurrentPresetId(newPresets[0].id);
+    }
   }
 };
 
@@ -95,5 +146,10 @@ export const selectPreset = (id: string) => {
   setCurrentPresetId(id);
 };
 
+export const reorderPresets = async (newOrder: Preset[]) => {
+  await savePresets(newOrder);
+};
+
 export const usePresets = () => presets;
 export const useCurrentPresetId = () => currentPresetId;
+export const useResetVersion = () => resetVersion;

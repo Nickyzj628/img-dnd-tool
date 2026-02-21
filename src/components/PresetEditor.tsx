@@ -13,12 +13,18 @@ export default function PresetEditor(props: PresetEditorProps) {
   const isEditing = () => !!props.preset;
   
   const [name, setName] = createSignal(props.preset?.name || '');
-  const [format, setFormat] = createSignal<Preset['format']>(props.preset?.format || 'webp');
+  const [format, setFormat] = createSignal<Preset['format']>(props.preset?.format ?? null);
   const [width, setWidth] = createSignal<number | ''>(props.preset?.width ?? '');
   const [height, setHeight] = createSignal<number | ''>(props.preset?.height ?? '');
   const [targetSizeKB, setTargetSizeKB] = createSignal<number | ''>(
     props.preset?.targetSize ? Math.round(props.preset.targetSize / 1024) : ''
   );
+  
+  // format 在 select 中使用空字符串表示 null
+  const formatForSelect = () => format() ?? '';
+  const handleFormatChange = (value: string) => {
+    setFormat(value === '' ? null : value as Preset['format']);
+  };
   
   // 获取原图尺寸和比例
   const originalImage = () => {
@@ -127,40 +133,48 @@ export default function PresetEditor(props: PresetEditorProps) {
 
           <div class="form-field">
             <label>目标格式</label>
-            <select value={format()} onChange={(e) => setFormat(e.target.value as Preset['format'])}>
+            <select value={formatForSelect()} onChange={(e) => handleFormatChange(e.target.value)}>
+              <option value="">跟随原图格式</option>
               <option value="webp">WebP</option>
-              <option value="jpeg">JPEG</option>
+              <option value="jpg">JPG</option>
               <option value="png">PNG</option>
+
             </select>
           </div>
 
           <div class="form-row">
             <div class="form-field">
-              <label>
-                宽度 (px)
-                <span class="input-hint">锁定比例</span>
-              </label>
+              <label>宽度 (px)</label>
               <input
                 type="number"
                 min="1"
                 max={maxDimensions().width}
                 value={width()}
                 onInput={(e) => handleWidthChange(e.target.value)}
+                onBlur={() => {
+                  const w = width();
+                  if (typeof w === 'number' && w > maxDimensions().width) {
+                    setWidth(maxDimensions().width);
+                  }
+                }}
                 placeholder="保持原宽"
               />
             </div>
 
             <div class="form-field">
-              <label>
-                高度 (px)
-                <span class="input-hint">自动计算</span>
-              </label>
+              <label>高度 (px)</label>
               <input
                 type="number"
                 min="1"
                 max={maxDimensions().height}
                 value={height()}
                 onInput={(e) => handleHeightChange(e.target.value)}
+                onBlur={() => {
+                  const h = height();
+                  if (typeof h === 'number' && h > maxDimensions().height) {
+                    setHeight(maxDimensions().height);
+                  }
+                }}
                 placeholder="保持原高"
               />
             </div>
@@ -174,7 +188,7 @@ export default function PresetEditor(props: PresetEditorProps) {
           </Show>
 
           <div class="form-field">
-            <label>目标大小 (KB，留空不限制)</label>
+            <label>目标大小（KB，留空不压缩）</label>
             <input
               type="number"
               min="10"

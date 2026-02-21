@@ -2,7 +2,7 @@
 export interface Preset {
   id: string;
   name: string;
-  format: 'webp' | 'jpeg' | 'png';
+  format: 'webp' | 'jpg' | 'png' | null;  // null 表示跟随原图格式
   width: number | null;      // null 表示保持原宽度
   height: number | null;     // null 表示保持原高度
   targetSize: number | null; // null 表示不限制大小，单位字节

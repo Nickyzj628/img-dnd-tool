@@ -62,9 +62,12 @@ export const processImage = async (
   file: File,
   width: number | null,
   height: number | null,
-  format: string,
+  format: string | null,
   targetSize: number | null
 ): Promise<Blob> => {
+  // 确定目标格式，如果未指定则使用原图格式
+  const targetFormat = format || file.type.replace('image/', '');
+  
   const imageCompression = await import('browser-image-compression');
   
   // 获取原图尺寸
@@ -85,7 +88,7 @@ export const processImage = async (
   
   // 构建选项
   const options: any = {
-    fileType: `image/${format}`,
+    fileType: `image/${targetFormat}`,
     initialQuality: 0.92,
     alwaysKeepResolution: false,
     preserveExif: false,
@@ -151,7 +154,7 @@ export const loadOriginalImage = async (file: File) => {
 export const executeProcess = async (
   width: number | null,
   height: number | null,
-  format: string,
+  format: string | null,
   targetSize: number | null
 ) => {
   const state = imageState();

@@ -11,7 +11,7 @@ import ExportDropZone from '@/components/ExportDropZone';
 import ErrorDialog from '@/components/ErrorDialog';
 
 // 导入状态
-import { loadPresets } from '@/stores/presetStore';
+import { loadPresets, resetPresets } from '@/stores/presetStore';
 import { useImageStore, useAppStore } from '@/stores/imageStore';
 import { applyMaterialTheme } from '@/stores/themeStore';
 
@@ -41,6 +41,21 @@ function App() {
     setEditingPreset(null);
   };
 
+  const handleResetPresets = async () => {
+    // 在某些环境中（如 Tauri）confirm 可能返回 Promise
+    const result = window.confirm('确定要重置所有预设为默认值吗？这将删除所有自定义预设。');
+    const confirmed = await Promise.resolve(result);
+    
+    if (confirmed) {
+      try {
+        await resetPresets();
+      } catch (error) {
+        console.error('重置预设失败:', error);
+        alert('重置预设失败');
+      }
+    }
+  };
+
   // 根据当前步骤渲染不同内容
   const renderStepContent = () => {
     const step = appState().currentStep;
@@ -58,6 +73,7 @@ function App() {
             <PresetSelector
               onEdit={handleEditPreset}
               onAdd={handleAddPreset}
+              onReset={handleResetPresets}
             />
             <ProcessButton />
           </div>
